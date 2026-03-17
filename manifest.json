@@ -1,11 +1,11 @@
 {
-  "name": "Reporte QBerries - Actos y Condiciones Inseguras",
-  "short_name": "QBerries",
-  "description": "Reporte de Actos y/o Condiciones Inseguras",
+  "name": "Punto de Validación QR - Control de Personal",
+  "short_name": "Validación QR",
+  "description": "Validación y registro de personal por escaneo de código QR",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#0056b3",
+  "theme_color": "#27ae60",
   "icons": [
     {
       "src": "logo.png",

@@ -1,313 +1,169 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte de Actos y/o Condiciones Inseguras - QBerries</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#27ae60">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%2327ae60'/%3E%3Ctext x='16' y='22' font-family='system-ui,Arial,sans-serif' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3EQ%3C/text%3E%3C/svg%3E">
-    <link rel="stylesheet" href="librerias/sweetalert2.min.css">
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Punto de Validación QR - Control de Personal</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect fill='%2327ae60' width='32' height='32' rx='4'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white'>QR</text></svg>">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#27ae60">
+  <link rel="stylesheet" href="librerias/sweetalert2.min.css">
+  <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="qr-val">
+  <nav id="qr-sidebar" class="sidebar">
+    <div class="sidebar-header sidebar-header-qberries">
+      <div class="brand brand-qberries-text">
+        <img src="Logo.png" alt="QBerries" class="sidebar-logo-image">
+      </div>
+      <button id="qr-close-btn" class="icon-btn qr-close-btn-icon" type="button" title="Cerrar menú" aria-label="Cerrar menú">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <ul>
+      <li><a href="#" class="nav-link qr-nav-link active" data-view="escanear"><i data-lucide="scan-barcode"></i> Escanear</a></li>
+      <li><a href="#" class="nav-link qr-nav-link" data-view="historial"><i data-lucide="history"></i> Historial</a></li>
+      <li><a href="#" class="nav-link qr-nav-link" data-view="ayuda"><i data-lucide="help-circle"></i> Ayuda</a></li>
+    </ul>
+    <div class="sidebar-version">Versión 1.1.0</div>
+  </nav>
 
-    <nav id="sidebar" class="sidebar">
-        <div class="sidebar-header sidebar-header-qberries">
-            <div class="brand brand-qberries-text">
-                <img src="../Logo.png" alt="QBerries" class="sidebar-logo-image">
-            </div>
-            <button id="close-btn" class="icon-btn" title="Cerrar menú">
-                <i data-lucide="x-circle"></i>
+  <main class="qr-main main-content">
+    <header class="header">
+      <div class="header-row header-row-1">
+        <button id="qr-menu-btn" class="menu-btn menu-btn-with-logo" type="button" aria-label="Abrir menú">
+          <i data-lucide="menu"></i>
+          <img src="Logo2.png" alt="QBerries" class="menu-logo-image">
+        </button>
+        <div id="network-status-container" class="status-card online">
+          <div class="status-info">
+            <span id="status-dot">●</span>
+            <span id="status-text">En línea</span>
+          </div>
+          <span id="pending-count">Pendientes: 0</span>
+        </div>
+      </div>
+      <h1 class="qr-title header-row header-row-2">Validación por QR</h1>
+    </header>
+
+    <section id="view-escanear" class="qr-view qr-view-escanear">
+      <div class="qr-scanner-wrap">
+        <p class="qr-scanner-hint">Escaneo: primera vez se registra; siguientes veces se valida (todo correcto).</p>
+        <div class="qr-reader-container">
+          <div id="qr-reader" class="qr-reader"></div>
+        </div>
+        <p id="qr-last-dni" class="qr-last-dni" aria-live="polite" hidden></p>
+        <div id="qr-file-scanner" class="qr-file-scanner-hidden" aria-hidden="true"></div>
+        <div class="qr-upload-zone" id="qr-upload-zone">
+          <input type="file" id="qr-file-input" accept="image/*" class="qr-file-input" aria-label="Seleccionar imagen con código QR">
+          <div class="qr-upload-inner">
+            <i data-lucide="image" class="qr-upload-icon" aria-hidden="true"></i>
+            <p class="qr-upload-title">Subir imagen de credencial</p>
+            <p class="qr-upload-desc">JPG o PNG. Máx. 12 MB.</p>
+            <button type="button" id="qr-btn-upload" class="qr-btn qr-btn-primary">
+              <i data-lucide="upload"></i>
+              <span>Seleccionar imagen</span>
             </button>
+          </div>
+          <span id="qr-file-name" class="qr-file-name-placeholder"></span>
         </div>
-        <ul>
-            <li><a href="#" class="active nav-link" data-view="nueva"><i data-lucide="plus-circle"></i> Nuevo Reporte</a></li>
-            <li><a href="#" class="nav-link" data-view="historial"><i data-lucide="history"></i> Historial</a></li>
-            <li><a href="#" class="nav-link" data-view="recomendaciones"><i data-lucide="info"></i> Recomendaciones</a></li>
-        </ul>
-        <div class="sidebar-version">Versión 1.1.0</div>
-    </nav>
-
-    <main class="main-content">
-        <header>
-            <button id="menu-btn" class="menu-btn menu-btn-with-logo">
-                <i data-lucide="menu"></i>
-                <img src="../Logo2.png" alt="QBerries" class="menu-logo-image">
-            </button>
-            <h1>Reporte de Actos y/o Condiciones Inseguras</h1>
-            <div id="network-status-container" class="status-card online">
-                <div class="status-info">
-                    <span id="status-dot">●</span>
-                    <span id="status-text">En línea</span>
-                </div>
-                <span id="pending-count">Pendientes: 0</span>
-            </div>
-        </header>
-        
-        <form id="seguridad-form" class="reporte-qberries">
-            <div class="form-header-qb">
-                <div class="form-header-col">
-                    <label for="rep_codigo">Código:</label>
-                    <input type="text" id="rep_codigo" name="rep_codigo" required>
-                </div>
-                <div class="form-header-col">
-                    <label for="rep_version">Versión:</label>
-                    <input type="text" id="rep_version" name="rep_version" required>
-                </div>
-                <div class="form-header-col">
-                    <label for="rep_aprobacion">Aprobación:</label>
-                    <input type="text" id="rep_aprobacion" name="rep_aprobacion" required>
-                </div>
-            </div>
-
-            <div class="field-row">
-                <label>Origen</label>
-                <div class="checkbox-group">
-                    <label><input type="checkbox" name="rep_tercero" id="rep_tercero" value="1"> TERCERO</label>
-                    <label><input type="checkbox" name="rep_propio" id="rep_propio" value="1"> PROPIO</label>
-                </div>
-            </div>
-
-            <div class="field-row">
-                <label>NOMBRE DE LA EMPRESA CONTRATISTA / ÁREA</label>
-                <input type="text" id="rep_area" name="rep_area" placeholder="Nombre de la empresa o área">
-            </div>
-
-            <div class="field-row">
-                <label>FECHA</label>
-                <div class="rep-fecha-wrap">
-                    <input type="date" id="rep_fecha" name="rep_fecha" required class="rep-fecha-input">
-                    <span id="rep_fecha_display" class="rep-fecha-display" aria-hidden="true">dd/mm/aaaa</span>
-                    <label for="rep_fecha" class="rep-fecha-icon-wrap" aria-label="Abrir calendario">
-                        <i data-lucide="calendar" class="rep-fecha-icon" aria-hidden="true"></i>
-                    </label>
-                </div>
-            </div>
-
-            <div class="field-row">
-                <label>LUGAR DE OCURRENCIA (ESPECIFICAR EL LUGAR EXACTO)</label>
-                <input type="text" id="rep_lugar" name="rep_lugar" placeholder="Especifique el lugar exacto">
-            </div>
-
-            <div class="field-row">
-                <label>NOMBRE DE LA PERSONA REPORTADA</label>
-                <input type="text" id="rep_persona" name="rep_persona" placeholder="Nombre completo">
-            </div>
-
-            <div class="section-bar">CLASIFICACIÓN</div>
-            <div class="field-row">
-                <label style="margin-bottom: 10px;">SEGURIDAD Y SALUD</label>
-                <div class="checkbox-group">
-                    <label><input type="checkbox" name="rep_acto" id="rep_acto" value="1"> ACTO</label>
-                    <label><input type="checkbox" name="rep_condicion" id="rep_condicion" value="1"> CONDICIÓN</label>
-                    <label><input type="checkbox" name="rep_incidente" id="rep_incidente" value="1"> INCIDENTE</label>
-                </div>
-            </div>
-            <div class="field-row">
-                <label style="margin-bottom: 10px;">MEDIO AMBIENTE</label>
-                <div class="checkbox-group">
-                    <label><input type="checkbox" name="rep_aspecto" id="rep_aspecto" value="1"> ASPECTO</label>
-                    <label><input type="checkbox" name="rep_impacto" id="rep_impacto" value="1"> IMPACTO</label>
-                </div>
-            </div>
-
-            <div class="section-bar">CAUSA</div>
-            <div class="causa-columns">
-                <div class="checkbox-group" style="flex-direction: column; align-items: flex-start;">
-                    <label><input type="checkbox" name="rep_causa_orden" id="rep_causa_orden" value="1"> Orden y Limpieza</label>
-                    <label><input type="checkbox" name="rep_causa_herramientas" id="rep_causa_herramientas" value="1"> Herramientas, Materiales y Equipos</label>
-                    <label><input type="checkbox" name="rep_causa_ergonomia" id="rep_causa_ergonomia" value="1"> Ergonomía</label>
-                    <label><input type="checkbox" name="rep_causa_productos" id="rep_causa_productos" value="1"> Productos Peligrosos</label>
-                    <label><input type="checkbox" name="rep_causa_residuos" id="rep_causa_residuos" value="1"> Segregación de residuos</label>
-                </div>
-                <div class="checkbox-group" style="flex-direction: column; align-items: flex-start;">
-                    <label><input type="checkbox" name="rep_causa_analisis" id="rep_causa_analisis" value="1"> Análisis de tareas</label>
-                    <label><input type="checkbox" name="rep_causa_epp" id="rep_causa_epp" value="1"> Equipo de Protección Personal</label>
-                    <label><input type="checkbox" name="rep_causa_conduccion" id="rep_causa_conduccion" value="1"> Conducción de vehículos</label>
-                    <label><input type="checkbox" name="rep_causa_infra" id="rep_causa_infra" value="1"> Infraestructura</label>
-                    <label><input type="checkbox" name="rep_causa_ambiental" id="rep_causa_ambiental" value="1"> Práctica Ambiental Inadecuada</label>
-                    <label><input type="checkbox" name="rep_causa_otros" id="rep_causa_otros" value="1"> Otros</label>
-                </div>
-            </div>
-
-            <div class="section-bar">DESCRIPCIÓN DEL EVENTO (¿Qué pasó?)</div>
-            <div class="field-row">
-                <div class="textarea-wrap">
-                    <textarea id="rep_descripcion" name="rep_descripcion" rows="4" placeholder="Describa lo sucedido..."></textarea>
-                    <div class="foto-nombre-row">
-                        <input type="text" id="rep_foto_nombre_descripcion" class="foto-nombre-input" readonly disabled placeholder="Nombre de la foto" title="Solo visual: nombre del archivo de la foto">
-                        <input type="file" id="rep_foto_descripcion" class="hidden-file-input" accept="image/*" aria-label="Subir foto o elegir de galería">
-                        <label for="rep_foto_descripcion" class="foto-label">FOTO</label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="section-bar">ACCIÓN INMEDIATA (¿Qué se hizo en el momento para reducir el riesgo?)</div>
-            <div class="field-row">
-                <div class="textarea-wrap">
-                    <textarea id="rep_accion" name="rep_accion" rows="4" placeholder="Indique la acción tomada..."></textarea>
-                    <div class="foto-nombre-row">
-                        <input type="text" id="rep_foto_nombre_accion" class="foto-nombre-input" readonly disabled placeholder="Nombre de la foto" title="Solo visual: nombre del archivo de la foto">
-                        <input type="file" id="rep_foto_accion" class="hidden-file-input" accept="image/*" aria-label="Subir foto o elegir de galería">
-                        <label for="rep_foto_accion" class="foto-label">FOTO</label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="section-bar">RECOMENDACIÓN (¿Qué se debería hacer para evitar su repetición?)</div>
-            <div class="field-row">
-                <div class="textarea-wrap">
-                    <textarea id="rep_recomendacion" name="rep_recomendacion" rows="4" placeholder="Recomendaciones..."></textarea>
-                    <div class="foto-nombre-row">
-                        <input type="text" id="rep_foto_nombre_recomendacion" class="foto-nombre-input" readonly disabled placeholder="Nombre de la foto" title="Solo visual: nombre del archivo de la foto">
-                        <input type="file" id="rep_foto_recomendacion" class="hidden-file-input" accept="image/*" aria-label="Subir foto o elegir de galería">
-                        <label for="rep_foto_recomendacion" class="foto-label">FOTO</label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-footer-qb">
-                <div class="field-row">
-                    <label>NOMBRE DEL REPORTANTE</label>
-                    <input type="text" id="rep_reportante" name="rep_reportante" placeholder="Nombre completo">
-                </div>
-                <div class="field-row">
-                    <label>FIRMA</label>
-                    <div class="firma-upload-row">
-                        <input type="file" id="rep_firma_foto" class="firma-file-input" accept="image/*" aria-label="Subir imagen de firma">
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-actions-row">
-                <button type="button" id="btn-guardar-registro" class="btn-guardar-qb">
-                    <span class="btn-guardar-text">GUARDAR REPORTE</span>
-                    <span id="spinner_guardar" class="loading-spinner btn-spinner" style="display: none;"></span>
-                </button>
-                <button type="button" id="btn-ver-pdf" class="btn-ver-pdf-qb btn-pdf-icon-only" aria-label="Ver PDF">
-                    <i data-lucide="file-text" aria-hidden="true"></i>
-                </button>
-            </div>
-        </form>
-
-        <!-- Modal para ver la foto -->
-        <div id="modal-foto-ver" class="modal-foto-overlay" aria-hidden="true">
-            <div class="modal-foto-content">
-                <img id="modal-foto-img" src="" alt="Foto">
-                <button type="button" class="modal-foto-cerrar" aria-label="Cerrar">Cerrar</button>
-            </div>
+        <div class="qr-validar-inline">
+          <p class="qr-validar-inline-label">Sin carnet: validar por DNI</p>
+          <div class="qr-validar-form">
+            <input type="text" id="qr-validar-dni" class="qr-input qr-validar-input" placeholder="DNI (8 dígitos)" maxlength="8" inputmode="numeric" autocomplete="off" pattern="[0-9]{8}">
+            <button type="button" id="qr-validar-btn" class="qr-btn qr-btn-outline-small">Validar</button>
+          </div>
+          <div id="qr-validar-result" class="qr-validar-result" aria-live="polite" hidden></div>
         </div>
+        <p id="qr-offline-notice" class="qr-offline-notice" aria-live="polite" hidden>No se puede validar por falta de internet.</p>
+      </div>
+      <div id="qr-loading-overlay" class="qr-loading-overlay" aria-hidden="true">
+        <div class="qr-spinner"></div>
+        <span id="qr-loading-message" class="qr-loading-message">Validando...</span>
+      </div>
+    </section>
 
-        <!-- Modal Ver PDF (misma página, descargar dentro) -->
-        <div id="modal-pdf-ver" class="modal-pdf-overlay" aria-hidden="true" style="display: none;">
-            <div class="modal-pdf-content">
-                <div class="modal-pdf-header">
-                    <h3>Vista previa del reporte (PDF)</h3>
-                    <div class="modal-pdf-actions">
-                        <a id="modal-pdf-descargar" href="#" download="Reporte-QBerries.pdf" class="btn-descargar-pdf">Descargar PDF</a>
-                        <button type="button" id="modal-pdf-cerrar" class="modal-pdf-cerrar" aria-label="Cerrar">Cerrar</button>
-                    </div>
-                </div>
-                <iframe id="modal-pdf-iframe" title="Vista previa PDF" class="modal-pdf-iframe"></iframe>
-            </div>
+    <section id="view-historial" class="qr-view qr-view-historial" hidden>
+      <div class="qr-historial-page">
+        <h2 class="qr-historial-title"><i data-lucide="history"></i> Historial de registros</h2>
+        <p class="qr-historial-desc">Últimos movimientos en este dispositivo. Paginación a partir de 10 registros.</p>
+        <p id="qr-historial-pendientes-aviso" class="qr-historial-pendientes-aviso" hidden>Los marcados como <strong>Pendiente</strong> se envían uno por uno al conectar. El primero se marca Registrado; los demás (mismo DNI) quedan Validado.</p>
+        <div class="qr-historial-table-wrap">
+          <table class="qr-historial-table">
+            <thead>
+              <tr>
+                <th>Fecha / Hora</th>
+                <th>DNI</th>
+                <th>Resultado</th>
+              </tr>
+            </thead>
+            <tbody id="qr-historial-body"></tbody>
+          </table>
         </div>
+        <div id="qr-historial-pagination" class="qr-historial-pagination" style="display:none"></div>
+        <p id="qr-historial-empty" class="qr-historial-empty">Aún no hay registros en este dispositivo.</p>
+      </div>
+    </section>
 
-        <!-- Vista Historial -->
-        <section id="view-historial" style="display: none; margin-top: 20px;">
-            <div class="historial-page">
-                <h2 class="historial-title"><i data-lucide="history"></i> Historial de envíos</h2>
-                <p class="historial-desc">Envíos realizados desde esta app: hora de subida y equipo o celular desde el que se envió.</p>
-                <div class="historial-table-wrapper">
-                    <table class="historial-table" id="historial-tabla-envios">
-                        <thead>
-                            <tr>
-                                <th>Hora de subida</th>
-                                <th>Equipo / Dispositivo</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historial-tabla-body">
-                            <!-- Se llena por JS desde localStorage -->
-                        </tbody>
-                    </table>
-                </div>
-                <p id="historial-sin-datos" class="historial-sin-datos" style="display: none;">Aún no hay envíos registrados desde este dispositivo.</p>
-            </div>
-        </section>
+    <section id="view-ayuda" class="qr-view qr-view-ayuda" hidden>
+      <div class="qr-ayuda-page">
+        <h2 class="qr-ayuda-main-title"><i data-lucide="help-circle"></i> Centro de ayuda</h2>
+        <p class="qr-ayuda-intro">Guía de uso del punto de validación QR para control de acceso.</p>
+        <div class="qr-ayuda-cards">
+          <div class="qr-ayuda-card">
+            <div class="qr-ayuda-card-icon"><i data-lucide="scan-barcode"></i></div>
+            <h3>Escanear credencial</h3>
+            <p>Use la cámara o suba una imagen del DNI con código QR. Enfoque el código para una lectura correcta.</p>
+          </div>
+          <div class="qr-ayuda-card">
+            <div class="qr-ayuda-card-icon"><i data-lucide="user-plus"></i></div>
+            <h3>Primer registro</h3>
+            <p>Si el DNI no está en el sistema, se registra automáticamente al escanear por primera vez.</p>
+          </div>
+          <div class="qr-ayuda-card">
+            <div class="qr-ayuda-card-icon"><i data-lucide="user-check"></i></div>
+            <h3>Validación</h3>
+            <p>Si el DNI ya está registrado, el sistema indica "Usuario ya registrado" sin crear un nuevo registro.</p>
+          </div>
+          <div class="qr-ayuda-card">
+            <div class="qr-ayuda-card-icon"><i data-lucide="hash"></i></div>
+            <h3>DNI Perú (RENIEC)</h3>
+            <p>Solo se aceptan DNI con exactamente 8 dígitos numéricos.</p>
+          </div>
+          <div class="qr-ayuda-card">
+            <div class="qr-ayuda-card-icon"><i data-lucide="edit-3"></i></div>
+            <h3>Validar sin carnet</h3>
+            <p>Ingrese los 8 dígitos del DNI y pulse Validar. Requiere conexión a internet.</p>
+          </div>
+          <div class="qr-ayuda-card">
+            <div class="qr-ayuda-card-icon"><i data-lucide="wifi-off"></i></div>
+            <h3>Sin conexión</h3>
+            <p>Los escaneos se guardan en cola y se envían al recuperar la conexión. La validación por DNI manual no está disponible sin internet.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
 
-        <!-- Recomendaciones -->
-        <section id="view-recomendaciones" style="display: none; margin-top: 20px;">
-            <div class="recomendaciones-page">
-                <header class="recomendaciones-header">
-                    <h2><i data-lucide="info"></i> Recomendaciones de Uso</h2>
-                    <p>En caso de error o para soporte técnico, comuníquese con el <strong>desarrollador TI</strong>.</p>
-                </header>
-                <div class="recomendaciones-grid">
-                    <article class="recom-card">
-                        <button type="button" class="recom-card-header" aria-expanded="true" aria-controls="recom-body-1">
-                            <i data-lucide="alert-triangle"></i>
-                            <h3>Manejo de Datos</h3>
-                            <i data-lucide="chevron-down" class="recom-card-chevron" aria-hidden="true"></i>
-                        </button>
-                        <div id="recom-body-1" class="recom-card-body">
-                        <div class="recom-card-body">
-                            <div class="recom-warning-box">
-                                <p><strong>No refresque la página</strong> mientras complete el formulario o guarde datos. Se puede perder la información no guardada.</p>
-                            </div>
-                            <ul class="recom-list">
-                                <li><strong>Guarde con frecuencia:</strong> Use el botón "GUARDAR REPORTE" al terminar cada reporte.</li>
-                                <li><strong>Revise antes de enviar:</strong> Verifique que todos los datos ingresados sean correctos.</li>
-                                <li><strong>Conexión:</strong> Se requiere internet para enviar el reporte al servidor.</li>
-                            </ul>
-                        </div>
-                    </article>
-                    <article class="recom-card">
-                        <button type="button" class="recom-card-header" aria-expanded="true" aria-controls="recom-body-2">
-                            <i data-lucide="upload-cloud"></i>
-                            <h3>Sincronización</h3>
-                            <i data-lucide="chevron-down" class="recom-card-chevron" aria-hidden="true"></i>
-                        </button>
-                        <div id="recom-body-2" class="recom-card-body">
-                            <ul class="recom-list">
-                                <li><strong>Envío:</strong> Al guardar con conexión, el reporte se envía de inmediato.</li>
-                                <li><strong>Historial:</strong> En la pestaña Historial puede ver la hora y el dispositivo de cada envío.</li>
-                            </ul>
-                        </div>
-                    </article>
-                    <article class="recom-card">
-                        <button type="button" class="recom-card-header" aria-expanded="true" aria-controls="recom-body-3">
-                            <i data-lucide="help-circle"></i>
-                            <h3>Contacto / Soporte</h3>
-                            <i data-lucide="chevron-down" class="recom-card-chevron" aria-hidden="true"></i>
-                        </button>
-                        <div id="recom-body-3" class="recom-card-body">
-                            <p class="recom-contacto">Ante cualquier error, fallo de la aplicación o necesidad de soporte, comuníquese con el <strong>desarrollador TI</strong>. No intente resolver problemas técnicos por su cuenta.</p>
-                        </div>
-                    </article>
-                    <article class="recom-card">
-                        <button type="button" class="recom-card-header" aria-expanded="true" aria-controls="recom-body-4">
-                            <i data-lucide="check-circle"></i>
-                            <h3>Mejores Prácticas</h3>
-                            <i data-lucide="chevron-down" class="recom-card-chevron" aria-hidden="true"></i>
-                        </button>
-                        <div id="recom-body-4" class="recom-card-body">
-                            <ul class="recom-list">
-                                <li>Complete todos los campos obligatorios (marcados con *).</li>
-                                <li>Use nombres y códigos correctos según su área.</li>
-                                <li>Mantenga la aplicación actualizada en su dispositivo.</li>
-                                <li>Reporte errores o comportamientos extraños al desarrollador TI.</li>
-                            </ul>
-                        </div>
-                    </article>
-                </div>
-            </div>
-        </section>
-    </main>
+  <!-- Chip toast (registrado / validado / enviado) estilo app moderna -->
+  <div id="qr-chip-toast" class="qr-chip-toast" aria-live="polite" hidden></div>
 
-    <script src="librerias/sweetalert2.all.min.js"></script>
-    <script src="librerias/lucide.min.js"></script>
-    <script src="librerias/jspdf.umd.min.js" onerror="this.onerror=null;var s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';document.head.appendChild(s);"></script>
+  <!-- Modal Validación Exitosa (solo si se necesita ver detalle) -->
+  <div id="qr-modal-success" class="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qr-modal-success-title" hidden>
+    <div class="qr-modal-backdrop"></div>
+    <div class="qr-modal-box qr-modal-success-box">
+      <div class="qr-modal-success-icon"><i data-lucide="user-check"></i></div>
+      <h2 id="qr-modal-success-title" class="qr-modal-title">Todo correcto</h2>
+      <div id="qr-modal-success-body" class="qr-modal-body"></div>
+      <button type="button" class="qr-btn qr-btn-primary" id="qr-modal-success-close">Cerrar</button>
+    </div>
+  </div>
 
-    <script type="module" src="script.js"></script>
+  <script src="librerias/sweetalert2.all.min.js"></script>
+  <script src="librerias/lucide.min.js"></script>
+  <script src="librerias/html5-qrcode.min.js"></script>
+  <!-- Tesseract opcional: para validar DNI visible vs QR, descarga tesseract.min.js a librerias/ y descomenta para uso en campo con/sin internet -->
+  <!-- <script src="librerias/tesseract.min.js"></script> -->
+  <script type="module" src="script.js"></script>
 </body>
 </html>
