@@ -168,17 +168,62 @@ import {
     el.removeAttribute('hidden');
   }
 
-  /** Voz (solo frontend): "Escaneado", "Registrado", "Validado" con Web Speech API. */
+  /** Voces en caché (en iOS se cargan con retraso con voiceschanged). */
+  var _cachedVoices = [];
+  function cacheVoices() {
+    var v = window.speechSynthesis.getVoices();
+    if (v && v.length) _cachedVoices = v;
+  }
+  if (typeof window !== 'undefined') {
+    cacheVoices();
+    if (window.speechSynthesis) {
+      window.speechSynthesis.onvoiceschanged = cacheVoices;
+    }
+  }
+
+  /** En iOS, cancel() justo antes de speak() puede impedir que suene. Evitamos cancel en iOS. */
+  function isIos() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+
+  /** Unlock de voz en iOS: hablar algo mínimo en el primer gesto (p. ej. al iniciar cámara) para que luego funcione tras async. */
+  var _speechWarmedUp = false;
+  function warmupSpeech() {
+    if (_speechWarmedUp || !window.speechSynthesis) return;
+    _speechWarmedUp = true;
+    try {
+      var u = new SpeechSynthesisUtterance('\u200B');
+      u.volume = 0.01;
+      u.rate = 10;
+      window.speechSynthesis.speak(u);
+    } catch (_) {}
+  }
+
+  /** Voz atractiva, empresarial: rápida y clara. Femenina, preferir premium/natural si existe. */
   function speakVoice(text) {
     if (!window.speechSynthesis) return;
+    var s = String(text).trim();
+    if (!s) return;
     try {
-      window.speechSynthesis.cancel();
-      var u = new SpeechSynthesisUtterance(String(text));
+      if (!isIos()) window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(s);
       u.lang = 'es-ES';
-      u.rate = 0.95;
-      var voices = window.speechSynthesis.getVoices();
-      var es = voices.filter(function (v) { return v.lang === 'es-ES' || v.lang === 'es'; });
-      if (es.length) u.voice = es[0];
+      u.rate = 1.4;
+      u.volume = 1;
+      var voices = _cachedVoices.length ? _cachedVoices : window.speechSynthesis.getVoices();
+      var es = voices.filter(function (v) { return v.lang === 'es-ES' || v.lang === 'es' || v.lang.indexOf('es-') === 0; });
+      if (es.length) {
+        var female = es.filter(function (v) {
+          var n = (v.name || '').toLowerCase();
+          return n.indexOf('mujer') !== -1 || n.indexOf('female') !== -1 || n.indexOf('woman') !== -1 || n.indexOf('monica') !== -1 || n.indexOf('laura') !== -1 || n.indexOf('lucia') !== -1 || n.indexOf('elena') !== -1 || n.indexOf('paula') !== -1 || n.indexOf('sara') !== -1 || n.indexOf('maria') !== -1 || n.indexOf('carmen') !== -1;
+        });
+        var list = female.length ? female : es;
+        var premium = list.filter(function (v) {
+          var n = (v.name || '').toLowerCase();
+          return n.indexOf('premium') !== -1 || n.indexOf('enhanced') !== -1 || n.indexOf('natural') !== -1;
+        });
+        u.voice = premium.length ? premium[0] : list[0];
+      }
       window.speechSynthesis.speak(u);
     } catch (_) {}
   }
@@ -517,6 +562,7 @@ import {
       function () {}
     ).then(function () {
       scannerStarted = true;
+      warmupSpeech();
     }).catch(function (err) {
       if (typeof Swal !== 'undefined') Swal.fire({ title: 'Cámara', text: 'No se pudo acceder a la cámara. Revisa permisos.', icon: 'warning', confirmButtonColor: '#27ae60' });
       else alert('No se pudo acceder a la cámara.');
@@ -671,6 +717,7 @@ import {
     var validarResult = document.getElementById('qr-validar-result');
     if (validarBtn && validarDniInput && validarResult) {
       validarBtn.addEventListener('click', function () {
+        warmupSpeech();
         var dni = validarDniInput.value.trim().replace(/\D/g, '');
         if (dni.length !== 8) {
           validarResult.hidden = false;
