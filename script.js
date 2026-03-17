@@ -294,10 +294,12 @@ import {
       .catch(function (err) {
         isProcessingQr = false;
         setLoading(false);
-        playError();
-        addHistorial({ dni, resultado: 'Error' });
+        addHistorial({ dni, resultado: 'Pendiente' });
         updateUI();
-        showConnectionErrorSwal();
+        setLastDniDisplay(dni, 'Registrado');
+        playSuccess();
+        speakVoice('Registrado');
+        showChipToast('Guardado. Se enviará al conectar.', 'success');
       });
   }
 

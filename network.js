@@ -12,10 +12,13 @@ function getApiUrl() {
   return GAS_EXEC_URL;
 }
 
-function isLocalOrigin() {
+/** true si estamos en local o en Netlify: no podemos leer respuestas CORS de GAS, usamos no-cors + JSONP. */
+function needsNoCorsStrategy() {
   if (typeof window === 'undefined') return false;
   var h = window.location.hostname;
-  return h === 'localhost' || h === '127.0.0.1' || h === '';
+  if (h === 'localhost' || h === '127.0.0.1' || h === '') return true;
+  if (h.indexOf('netlify.app') !== -1) return true;
+  return false;
 }
 
 export const REPORTE_WEB_APP_URL = getApiUrl();
@@ -29,19 +32,19 @@ const SYNC_BATCH_DELAY_MS = 400;
 const SYNC_BATCH_SIZE = 5;
 
 function getPending() {
-  try {
-    const raw = localStorage.getItem(PENDING_KEY);
-    if (!raw) return [];
-    const arr = JSON.parse(raw);
-    return Array.isArray(arr) ? arr : [];
-  } catch (_) { return []; }
+    try {
+        const raw = localStorage.getItem(PENDING_KEY);
+        if (!raw) return [];
+        const arr = JSON.parse(raw);
+        return Array.isArray(arr) ? arr : [];
+    } catch (_) { return []; }
 }
 
 function setPending(arr) {
-  try {
-    localStorage.setItem(PENDING_KEY, JSON.stringify(arr));
+    try {
+        localStorage.setItem(PENDING_KEY, JSON.stringify(arr));
     window.dispatchEvent(new CustomEvent('qr-pending-updated'));
-  } catch (_) {}
+    } catch (_) {}
 }
 
 export function addPending(item) {
@@ -53,7 +56,7 @@ export function addPending(item) {
 
 function removePendingAtIndex(index) {
   const list = getPending();
-  list.splice(index, 1);
+    list.splice(index, 1);
   setPending(list);
 }
 
@@ -71,7 +74,7 @@ function buildRequest(action, payload) {
   console.log('[POST] Action:', action);
   console.log('[POST] Datos enviados:', JSON.stringify(body, null, 2));
 
-  if (isLocalOrigin()) {
+  if (needsNoCorsStrategy()) {
     // En local: no-cors + text/plain = petición "simple", no preflight, el POST se envía. No podemos leer la respuesta.
     return fetch(url, {
       method: 'POST',
@@ -122,8 +125,8 @@ export function processQR(dni) {
     return Promise.resolve({ offline: true, id });
   }
 
-  // En local/no-cors no podemos leer la respuesta del POST. Primero GET: si ya existe → "Usuario ya fue registrado"; si no → POST para registrar.
-  if (isLocalOrigin()) {
+  // En local o Netlify (no-cors) no podemos leer la respuesta del POST. Primero GET (JSONP): si ya existe → "Usuario ya fue registrado"; si no → POST para registrar.
+  if (needsNoCorsStrategy()) {
     return getValidarDni(id).then(function (r) {
       if (r.ok && r.exists) {
         return { ok: true, validated: true, id: id, message: r.message || 'Usuario ya fue registrado' };
@@ -180,7 +183,7 @@ function cancelarReintentos() {
   }
 }
 
-/** GET validar DNI: en local usa JSONP para evitar CORS; en producción fetch normal. */
+/** GET validar DNI: en local/Netlify usa JSONP para evitar CORS; en producción fetch normal. */
 export function getValidarDni(dni) {
   var id = (dni == null || dni === '') ? '' : String(dni).replace(/\s/g, '').replace(/\D/g, '');
   if (id.length !== 8) return Promise.resolve({ ok: false, exists: false, id: id, error: 'DNI inválido (8 dígitos, RENIEC Perú)' });
@@ -188,7 +191,7 @@ export function getValidarDni(dni) {
   var url = getApiUrl() + '?dni=' + encodeURIComponent(id);
   console.log('[GET] Validar DNI — URL:', url);
 
-  if (isLocalOrigin()) {
+  if (needsNoCorsStrategy()) {
     return new Promise(function (resolve, reject) {
       var name = '__qrValidar_' + Date.now();
       var scriptUrl = url + '&callback=' + encodeURIComponent(name);
@@ -222,9 +225,9 @@ export function getValidarDni(dni) {
  * Envía pendientes en lotes con pausa para no saturar el servidor (miles de escaneos).
  */
 export async function enviarPendientes() {
-  if (!navigator.onLine) return;
+    if (!navigator.onLine) return;
   var list = getPending();
-  if (list.length === 0) return;
+    if (list.length === 0) return;
 
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('qr-sync-start', { detail: { total: list.length } }));
@@ -245,18 +248,18 @@ export async function enviarPendientes() {
         await new Promise(function (r) { setTimeout(r, 400); });
       }
       sent++;
-      updateUI();
+            updateUI();
       if (sent % batchSize === 0 && getPending().length > 0) {
         await new Promise(function (r) { setTimeout(r, delay); });
       }
-    } catch (_) {
+        } catch (_) {
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('qr-sync-failed', { detail: { pending: getPending().length } }));
       }
-      break;
+            break;
+        }
     }
-  }
-  updateUI();
+    updateUI();
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('qr-sync-done', { detail: { sent: sent } }));
   }

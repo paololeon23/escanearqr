@@ -1,0 +1,20 @@
+# Despliegue en Netlify - Punto de Validación QR (Q Berries)
+[build]
+  publish = "."
+  # Sin comando de build: sitio estático (HTML/JS/CSS)
+
+# Headers para que el service worker se actualice al subir cambios
+[[headers]]
+  for = "/service-worker.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
